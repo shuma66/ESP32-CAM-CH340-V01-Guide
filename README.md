@@ -7,9 +7,20 @@
 </p>
 
 <p align="center">
-  <img src="images/board_front.jpg" height="220" alt="Board Front">
-  <img src="images/board_back.jpg" height="220" alt="Board Back">
+  <img src="images/board_front.jpg" width="300" alt="ESP32-S CAM CH340 V01 - Front">
+  <br><em>Front side of the ESP32-S-CAM-CH340 V01 board</em>
 </p>
+
+<p align="center">
+  <img src="images/board_back.jpg" width="300" alt="ESP32-S CAM CH340 V01 - Back">
+  <br><em>Rear side showing the V01 marking and CH340</em>
+</p>
+
+<p align="center">
+  <img src="images/upload_mode.jpg" width="300" alt="ESP32-CAM V01 flash mode jumper">
+  <br><em>IO0 ↔ GND jumper required for flash mode</em>
+</p>
+
 
 ---
 
