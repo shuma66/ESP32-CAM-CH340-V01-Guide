@@ -1,83 +1,190 @@
-# ESP32-CAM-CH340-V01-Guide
-⚠️ BOARD IDENTIFICATION IS CRITICAL
-Your board is NOT a standard AI Thinker ESP32-CAM. If you have an "ESP-32S" chip, a "V01" marking, and a built-in CH340 USB chip, this guide is for you.
+<!-- TITLE -->
+<h1 align="center">📸 ESP32-CAM-CH340 V01 — Configuration & Compatibility Guide</h1>
 
-Common symptoms of using the wrong configuration:
+<p align="center">
+  <strong>A complete, verified configuration for the ESP32-S-CAM-CH340 V01 (non-AI Thinker) board</strong><br>
+  Fixes the <code>ESP_ERR_NOT_SUPPORTED</code>, <code>0x106</code>, and unsupported camera errors.
+</p>
 
-E (xx) camera: Detected camera not supported.
+<p align="center">
+  <img src="images/board_front.jpg" height="220" alt="Board Front">
+  <img src="images/board_back.jpg" height="220" alt="Board Back">
+</p>
 
-Camera probe failed with error 0x106
+---
 
-Camera works in bootloader but fails in normal mode
+## 🏷️ Badges
 
-🛠️ The Fix: Custom Pin Configuration
-The core issue is the XCLK pin. Most guides use GPIO21, but your V01 board uses GPIO0.
+<p align="center">
+  <img src="https://img.shields.io/badge/Board-ESP32--CAM--CH340_V01-blue?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Status-Verified%20Working-brightgreen?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Camera-OV2640-orange?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Requires-Custom%20Pins-critical?style=for-the-badge">
+</p>
 
-Step 1: Create Custom Pin File
-Create a file called camera_pins_v01.h in your project folder 
-Step 2: Modify CameraWebServer Example
-Open Arduino IDE
+---
 
-Go to: File > Examples > ESP32 > Camera > CameraWebServer
+# ⚠️ Critical Notice
 
-Find this section (around line 30-50):
+This guide is **ONLY** for the **ESP32-S-CAM-CH340 V01** board.  
+Using AI Thinker pinouts will cause:
 
-cpp
-// Select camera model
-//#define CAMERA_MODEL_WROVER_KIT
-//#define CAMERA_MODEL_AI_THINKER
-// ... etc ...
-Comment out ALL lines and add your custom model:
+```
+E (39) camera: Detected camera not supported.
+E (39) camera: Camera probe failed with error 0x106
+Camera init failed with error 0x106
+```
 
-cpp
-//#define CAMERA_MODEL_WROVER_KIT
-//#define CAMERA_MODEL_AI_THINKER
-#define CAMERA_MODEL_ESP32S_V01_CH340  // ADD THIS LINE
-Add include at the top of the sketch (after other includes):
+---
 
-cpp
-#include "camera_pins_v01.h"
-Step 3: Configure Arduino IDE
-Setting	Value
-Board	AI Thinker ESP32-CAM
-Partition Scheme	Huge APP (3MB No OTA/1MB SPIFFS)
-Flash Frequency	40MHz
-Upload Speed	115200
-Step 4: Upload Sequence (CRITICAL!)
-Because GPIO0 is used for XCLK, you MUST follow this sequence:
+# 🔍 Hardware Identification
 
-Short IO0 to GND on the board
+Verify ALL fields below match your board:
 
-Press RESET button
+| Feature | What to Look For |
+|--------|------------------|
+| **Main Chip** | ESP-32S (printed on RF shield) |
+| **Board Revision** | V01 near GPIO pins |
+| **USB Interface** | Built-in CH340 (Micro-USB port) |
+| **Common Markings** | ESP32-CAM, ESP32-CAM-MB, OV2640 |
 
-Start upload in Arduino IDE
+---
 
-Remove IO0-GND short when IDE says "Connecting..."
+# 🚀 Quick Start Checklist
 
-Board will reboot and camera should work
+✔ Use the **custom** `camera_pins_v01.h`  
+✔ Select **AI Thinker ESP32-CAM** in Arduino IDE  
+✔ Follow the **special upload sequence**  
+✔ Power with **5V / 2A** (not USB from a PC)
 
-🔍 Troubleshooting
-Problem	Solution
-"Camera init failed"	Check cable connection; ensure 5V/2A power
-No /dev/ttyUSB* on Linux	Install CH340 driver: sudo apt install ch34x
-WiFi unstable	Add external antenna to u.FL connector
-PSRAM not detected	Verify Partition Scheme is "Huge APP"
-📁 Repository Files
-text
+---
+
+# 📁 Repository Structure
+
+```
 ESP32-CAM-CH340-V01-Guide/
-├── README.md                    # This guide
-├── camera_pins_v01.h            # Custom pin configuration
-├── images/                      # Board photos for identification
-│   ├── front_view.jpg
-│   └── back_view.jpg
+├── README.md
+├── camera_pins_v01.h
+├── images/
+│   ├── board_front.jpg
+│   └── board_back.jpg
 └── examples/
-    └── BasicCameraExample.ino   # Minimal working example
-🤝 Contributing
-Found another variation of this board? Please open an Issue or Pull Request with:
+    └── BasicWebServer.ino
+```
 
-Clear photos of your board (front/back)
+---
 
-What configuration worked for you
+# 🔧 Custom Pin Configuration (Required Fix)
 
-Serial monitor output
+**Why?**  
+The V01 board uses **GPIO0 for XCLK**, not GPIO21 like AI Thinker boards.
+
+## Step 1 — Create `camera_pins_v01.h`
+
+```cpp
+// camera_pins_v01.h
+// ESP32-S-CAM-CH340 V01 Custom Configuration
+// XCLK MUST be GPIO0 (NOT GPIO21)
+
+#if defined(CAMERA_MODEL_ESP32S_V01_CH340)
+#define PWDN_GPIO_NUM     32
+#define RESET_GPIO_NUM    -1
+#define XCLK_GPIO_NUM     0
+#define SIOD_GPIO_NUM     26
+#define SIOC_GPIO_NUM     27
+
+#define Y9_GPIO_NUM       35
+#define Y8_GPIO_NUM       34
+#define Y7_GPIO_NUM       39
+#define Y6_GPIO_NUM       36
+#define Y5_GPIO_NUM       21
+#define Y4_GPIO_NUM       19
+#define Y3_GPIO_NUM       18
+#define Y2_GPIO_NUM       5
+#define VSYNC_GPIO_NUM    25
+#define HREF_GPIO_NUM     23
+#define PCLK_GPIO_NUM     22
+
+#define LED_GPIO_NUM      4
+#endif
+```
+
+---
+
+# 🛠️ Step 2 — Modify Arduino Example
+
+Open:  
+**File → Examples → ESP32 → Camera → CameraWebServer**
+
+### Replace camera model section with:
+
+```cpp
+//#define CAMERA_MODEL_WROVER_KIT
+//#define CAMERA_MODEL_AI_THINKER
+#define CAMERA_MODEL_ESP32S_V01_CH340
+```
+
+### Add include at the top:
+
+```cpp
+#include "camera_pins_v01.h"
+```
+
+---
+
+# ⚙️ Step 3 — Arduino IDE Configuration
+
+| Setting | Value |
+|--------|-------|
+| **Board** | AI Thinker ESP32-CAM |
+| **Partition Scheme** | Huge APP (3MB No OTA / 1MB SPIFFS) |
+| **Flash Frequency** | 40MHz |
+| **Upload Speed** | 115200 |
+| **Core Debug Level** | None |
+
+---
+
+# 🚨 Step 4 — Special Upload Sequence
+
+GPIO0 is used for XCLK → Board cannot enter flash mode normally.
+
+Follow this EXACTLY:
+
+1. Short **IO0 → GND**  
+2. Press **RESET**  
+3. Click **Upload** in Arduino IDE  
+4. When IDE shows **Connecting…**, remove IO0-GND short  
+5. Board reboots → camera initializes ✔
+
+---
+
+# ⚡ Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| **Camera init failed** | Reseat ribbon + use 5V/2A power |
+| **No serial port (Linux)** | Install CH340: `sudo apt install ch34x` |
+| **PSRAM not detected** | Use *Huge APP* partition |
+| **Random reboots** | Power instability → must use proper adapter |
+
+---
+
+# 🤝 Contributing & Support
+
+Found a different board revision? Please help!
+
+- Open an Issue with **front/back board photos**  
+- Share your **working pinout**  
+- Submit Pull Requests with improvements  
+
+### If requesting help, include:
+
+📸 Photos of your board  
+📝 Serial Monitor error messages  
+⚙️ Your Arduino IDE configuration  
+📂 Your `camera_pins_v01.h`  
+
+---
+
+<h3 align="center">⭐ If this repo helped you, consider giving it a star!</h3>
 
